@@ -21,15 +21,98 @@ const IncidentForm: React.FC = () => {
     user_role: UserRole.EMPLOYEE
   });
 
+  // Simulate Smart Triage Engine
+  const simulateTriage = (incident: any) => {
+    const description = `${incident.short_description} ${incident.detailed_description}`.toLowerCase();
+
+    // Classification
+    let category = 'APPLICATION';
+    if (description.includes('password') || description.includes('login') || description.includes('access')) {
+      category = 'ACCESS';
+    } else if (description.includes('network') || description.includes('vpn') || description.includes('internet')) {
+      category = 'NETWORK';
+    } else if (description.includes('database') || description.includes('query') || description.includes('sql')) {
+      category = 'DATABASE';
+    } else if (description.includes('security') || description.includes('phishing') || description.includes('virus')) {
+      category = 'SECURITY';
+    }
+
+    // Priority Calculation
+    let impactScore = incident.affected_users > 50 ? 3 : incident.affected_users > 10 ? 2 : 1;
+    if (incident.environment === 'Production') impactScore += 1;
+
+    let urgencyScore = 1;
+    if (incident.user_role === 'Finance' || incident.user_role === 'Ops') urgencyScore = 3;
+    else if (incident.user_role === 'Manager') urgencyScore = 2;
+
+    const impact = impactScore >= 4 ? 'High' : impactScore >= 2 ? 'Medium' : 'Low';
+    const urgency = urgencyScore >= 3 ? 'High' : urgencyScore >= 2 ? 'Medium' : 'Low';
+
+    let priority = 'P4';
+    if (impactScore >= 3 && urgencyScore >= 3) priority = 'P1';
+    else if (impactScore >= 3 || urgencyScore >= 3) priority = 'P2';
+    else if (impactScore >= 2 || urgencyScore >= 2) priority = 'P3';
+
+    // Team Assignment
+    const teamMapping: any = {
+      'ACCESS': 'IAM Team',
+      'NETWORK': 'Network Team',
+      'APPLICATION': 'App Support',
+      'DATABASE': 'Database Team',
+      'SECURITY': 'SecOps'
+    };
+
+    // Auto-resolution check (simplified)
+    const autoResolvable = category === 'ACCESS' || (category === 'SECURITY' && description.includes('phishing'));
+
+    const resolutionSteps: any = {
+      'ACCESS': [
+        "Navigate to account portal",
+        "Click 'Forgot Password'",
+        "Verify identity via email/SMS",
+        "Set new password"
+      ],
+      'SECURITY': [
+        "Do NOT click any links",
+        "Do NOT download attachments",
+        "Forward to security@company.com",
+        "Delete the email",
+        "Change password if clicked"
+      ]
+    };
+
+    return {
+      classified_category: category,
+      impact,
+      urgency,
+      priority,
+      assigned_team: teamMapping[category],
+      status: autoResolvable ? 'Auto-Resolved' : 'New',
+      auto_resolvable: autoResolvable,
+      resolution_steps: autoResolvable ? resolutionSteps[category] : undefined
+    };
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
-      const response = await incidentAPI.create(formData);
+      // Simulate triage processing
+      const triageResult = simulateTriage(formData);
+      const incidentWithTriage = {
+        ...formData,
+        ...triageResult
+      };
+
+      const response = await incidentAPI.create(incidentWithTriage);
       console.log('Incident created:', response);
-      navigate('/dashboard');
+
+      // Show success message briefly before redirect
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 500);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to create incident');
       console.error('Error creating incident:', err);

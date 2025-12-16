@@ -9,9 +9,15 @@ const Header: React.FC = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <header className="bg-white border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+    <>
+      {/* Demo Mode Banner */}
+      <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white text-center py-2 text-sm">
+        <span className="font-semibold">🎯 DEMO MODE</span> - Viewing sample data. Deploy backend to use real data.
+      </div>
+
+      <header className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/dashboard" className="flex items-center gap-2">
             <Activity className="text-primary-600" size={32} />
@@ -50,6 +56,7 @@ const Header: React.FC = () => {
         </div>
       </div>
     </header>
+    </>
   );
 };
 
