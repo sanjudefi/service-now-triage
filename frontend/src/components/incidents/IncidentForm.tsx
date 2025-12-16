@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { incidentAPI } from '../../services/api';
-import { Environment, UserRole } from '../../types';
+import { Environment, UserRole, Category, Impact, Urgency, Priority, Status } from '../../types';
 import Input from '../common/Input';
 import Select from '../common/Select';
 import Button from '../common/Button';
@@ -26,15 +26,15 @@ const IncidentForm: React.FC = () => {
     const description = `${incident.short_description} ${incident.detailed_description}`.toLowerCase();
 
     // Classification
-    let category = 'APPLICATION';
+    let category: Category = Category.APPLICATION;
     if (description.includes('password') || description.includes('login') || description.includes('access')) {
-      category = 'ACCESS';
+      category = Category.ACCESS;
     } else if (description.includes('network') || description.includes('vpn') || description.includes('internet')) {
-      category = 'NETWORK';
+      category = Category.NETWORK;
     } else if (description.includes('database') || description.includes('query') || description.includes('sql')) {
-      category = 'DATABASE';
+      category = Category.DATABASE;
     } else if (description.includes('security') || description.includes('phishing') || description.includes('virus')) {
-      category = 'SECURITY';
+      category = Category.SECURITY;
     }
 
     // Priority Calculation
@@ -45,40 +45,43 @@ const IncidentForm: React.FC = () => {
     if (incident.user_role === 'Finance' || incident.user_role === 'Ops') urgencyScore = 3;
     else if (incident.user_role === 'Manager') urgencyScore = 2;
 
-    const impact = impactScore >= 4 ? 'High' : impactScore >= 2 ? 'Medium' : 'Low';
-    const urgency = urgencyScore >= 3 ? 'High' : urgencyScore >= 2 ? 'Medium' : 'Low';
+    const impact: Impact = impactScore >= 4 ? Impact.HIGH : impactScore >= 2 ? Impact.MEDIUM : Impact.LOW;
+    const urgency: Urgency = urgencyScore >= 3 ? Urgency.HIGH : urgencyScore >= 2 ? Urgency.MEDIUM : Urgency.LOW;
 
-    let priority = 'P4';
-    if (impactScore >= 3 && urgencyScore >= 3) priority = 'P1';
-    else if (impactScore >= 3 || urgencyScore >= 3) priority = 'P2';
-    else if (impactScore >= 2 || urgencyScore >= 2) priority = 'P3';
+    let priority: Priority = Priority.P4;
+    if (impactScore >= 3 && urgencyScore >= 3) priority = Priority.P1;
+    else if (impactScore >= 3 || urgencyScore >= 3) priority = Priority.P2;
+    else if (impactScore >= 2 || urgencyScore >= 2) priority = Priority.P3;
 
     // Team Assignment
-    const teamMapping: any = {
-      'ACCESS': 'IAM Team',
-      'NETWORK': 'Network Team',
-      'APPLICATION': 'App Support',
-      'DATABASE': 'Database Team',
-      'SECURITY': 'SecOps'
+    const teamMapping: Record<Category, string> = {
+      [Category.ACCESS]: 'IAM Team',
+      [Category.NETWORK]: 'Network Team',
+      [Category.APPLICATION]: 'App Support',
+      [Category.DATABASE]: 'Database Team',
+      [Category.SECURITY]: 'SecOps'
     };
 
     // Auto-resolution check (simplified)
-    const autoResolvable = category === 'ACCESS' || (category === 'SECURITY' && description.includes('phishing'));
+    const autoResolvable = category === Category.ACCESS || (category === Category.SECURITY && description.includes('phishing'));
 
-    const resolutionSteps: any = {
-      'ACCESS': [
+    const resolutionSteps: Record<Category, string[]> = {
+      [Category.ACCESS]: [
         "Navigate to account portal",
         "Click 'Forgot Password'",
         "Verify identity via email/SMS",
         "Set new password"
       ],
-      'SECURITY': [
+      [Category.SECURITY]: [
         "Do NOT click any links",
         "Do NOT download attachments",
         "Forward to security@company.com",
         "Delete the email",
         "Change password if clicked"
-      ]
+      ],
+      [Category.NETWORK]: [],
+      [Category.APPLICATION]: [],
+      [Category.DATABASE]: []
     };
 
     return {
@@ -87,7 +90,7 @@ const IncidentForm: React.FC = () => {
       urgency,
       priority,
       assigned_team: teamMapping[category],
-      status: autoResolvable ? 'Auto-Resolved' : 'New',
+      status: autoResolvable ? Status.AUTO_RESOLVED : Status.NEW,
       auto_resolvable: autoResolvable,
       resolution_steps: autoResolvable ? resolutionSteps[category] : undefined
     };
